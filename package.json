@@ -21,7 +21,9 @@
   },
   "homepage": "https://github.com/Cosmic-rare/sync-mongo#readme",
   "dependencies": {
-    "express": "^4.18.1"
+    "cors": "^2.8.5",
+    "express": "^4.18.1",
+    "socket.io": "^4.5.1"
   },
   "devDependencies": {
     "@babel/core": "^7.18.10",
