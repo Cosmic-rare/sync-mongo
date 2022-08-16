@@ -15,10 +15,11 @@ const PORT = 4000;
 app.use(cors());
 app.use(express.json());
 
-app.get("/", async (_req, res) => {
-  return res.status(200).send({
-    message: "Hello World!!",
+app.post("/", (req, res) => {
+  req.body.commands.map((val) => {
+    console.log(val.type);
   });
+  return res.status(200).json({});
 });
 
 io.on("connection", (socket) => {
