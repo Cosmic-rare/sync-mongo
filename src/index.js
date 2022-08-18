@@ -6,7 +6,7 @@ import mongoose from "mongoose";
 import { check, validationResult } from "express-validator";
 
 const Task1Type = new mongoose.Schema({
-  _uid: String,
+  _id: String,
   _rev: Number,
   _deleted: Boolean,
   title: String,
@@ -46,7 +46,7 @@ app.post(
     check("data._hash").isMD5(),
     check("data.id").not().isEmpty(),
   ],
-  (req, res) => {
+  async (req, res) => {
     const errors = validationResult(req);
     console.log(errors);
 
@@ -55,7 +55,21 @@ app.post(
     }
 
     if (command_type.includes(req.body.type)) {
-      console.log(req.body.data.id);
+      const data = req.body.data;
+      delete data.id;
+      console.log(data);
+
+      const task = await Task1.findOne({ _id: data._id });
+
+      if (task) {
+        if (task._rev < data._rev) {
+          await Task1.findOneAndUpdate({ _id: data._id }, data);
+        }
+      } else {
+        return new Task1(data).save().catch(() => {
+          return res.status(500).json({});
+        });
+      }
     }
 
     return res.status(200).json({});
