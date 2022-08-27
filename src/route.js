@@ -1,16 +1,37 @@
 import express from "express";
-import { Task1, Task2 } from "./schema";
 
 const router = express.Router();
-const command_type = ["create", "update", "delete"];
+
+import Ajv from "ajv";
+
+const ajv = new Ajv();
+
+const schema = {
+  required: ["type"],
+  type: "object",
+  properties: {
+    type: {
+      type: "string",
+      pattern: "create|update|delete",
+    },
+  },
+};
+
+const validate = ajv.compile(schema);
 
 router.post("/", async (req, res) => {
-  if (req.body.type === "delete") {
-    // delete task1 by req.body.data._id
-  }
+  // バリデーションを実行
+  const valid = validate(req.body);
 
-  const data = req.body.data;
-  delete data.id;
+  if (!valid) {
+    return res.status(400).json({ errors: validate.errors });
+  }
+  return res.status(200).json({ status: "sucsess" });
+
+  /*
+  if req.body.type == delete
+    delete task1 by req.body.data._id
+  */
 
   /*
   if task1.find by req.body.data._id 
