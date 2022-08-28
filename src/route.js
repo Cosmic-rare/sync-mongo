@@ -6,11 +6,14 @@ const router = express.Router();
 const ajv = new Ajv();
 
 const bodySchema = {
-  required: ["datas"],
+  required: ["datas", "error_messages"],
   type: "object",
   properties: {
     datas: {
       type: "array",
+    },
+    error_messages: {
+      type: "boolean",
     },
   },
 };
@@ -48,10 +51,13 @@ router.post("/", async (req, res) => {
   req.body.datas?.map((val, index) => {
     const taskValid = taskValidate(val);
     if (!taskValid) {
-      errorTasks.push({
-        id: val._id ? val._id : null,
-        message: taskValidate.errors,
-      });
+      errorTasks.push(
+        !req.body.error_messages
+          ? val._id
+            ? val._id
+            : null
+          : { id: val._id ? val._id : null, message: taskValidate.errors }
+      );
     } else {
       sucsessTasks.push(val._id);
     }
