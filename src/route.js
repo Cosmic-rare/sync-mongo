@@ -6,13 +6,9 @@ const router = express.Router();
 const ajv = new Ajv();
 
 const bodySchema = {
-  required: ["type", "datas"],
+  required: ["datas"],
   type: "object",
   properties: {
-    type: {
-      type: "string",
-      pattern: "^(create|update|delete)+$",
-    },
     datas: {
       type: "array",
     },
@@ -20,9 +16,13 @@ const bodySchema = {
 };
 
 const taskSchema = {
-  required: ["title", "_id"],
+  required: ["type", "title", "_id"],
   type: "object",
   properties: {
+    type: {
+      type: "string",
+      pattern: "^(create|update|delete)+$",
+    },
     title: {
       type: "string",
     },
@@ -48,7 +48,10 @@ router.post("/", async (req, res) => {
   req.body.datas?.map((val, index) => {
     const taskValid = taskValidate(val);
     if (!taskValid) {
-      errorTasks.push(val?._id);
+      errorTasks.push({
+        id: val._id ? val._id : null,
+        message: taskValidate.errors,
+      });
     } else {
       sucsessTasks.push(val._id);
     }
