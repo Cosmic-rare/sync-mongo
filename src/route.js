@@ -1,56 +1,8 @@
 import express from "express";
-import Ajv from "ajv";
 import { Task } from "./schema";
+import { bodyValidate, taskValidate } from "./validaitor";
 
 const router = express.Router();
-const ajv = new Ajv();
-
-const bodySchema = {
-  required: ["datas", "error_messages"],
-  type: "object",
-  properties: {
-    datas: {
-      type: "array",
-    },
-    error_messages: {
-      type: "boolean",
-    },
-  },
-};
-
-const taskSchema = {
-  required: [
-    "sync_id",
-    "_id",
-    "_rev",
-    "_deleted",
-    "title",
-    "done",
-    "_createdAt",
-    "_updatedAt",
-    "_hash",
-    "type",
-  ],
-  type: "object",
-  properties: {
-    type: {
-      type: "string",
-      pattern: "^(create|update|delete)+$",
-    },
-    sync_id: { type: "string" },
-    _id: { type: "string" },
-    _rev: { type: "number" },
-    _deleted: { type: "boolean" },
-    title: { type: "string" },
-    done: { type: "boolean" },
-    _createdAt: { type: "number" },
-    _updatedAt: { type: "number" },
-    _hash: { type: "string" },
-  },
-};
-
-const bodyValidate = ajv.compile(bodySchema);
-const taskValidate = ajv.compile(taskSchema);
 
 router.post("/", async (req, res) => {
   const errorTasks = [];
@@ -76,13 +28,38 @@ router.post("/", async (req, res) => {
             }
       );
     } else {
+      switch (val.type) {
+        case "create":
+          let createTask = val;
+          createTask._uid = val._id;
+          delete createTask._id, createTask.sync_id, createTask.type;
+
+          try {
+            const newTask = new Task({
+              ...createTask,
+              _v: 10000000000000 * createTask._rev + createTask._updatedAt,
+            });
+            newTask.save();
+            sucsessTasks.push(val.sync_id);
+          } catch (e) {
+            errorTasks.push(
+              !req.body.error_messages
+                ? val.sync_id
+                  ? val.sync_id
+                  : null
+                : {
+                    id: val.sync_id ? val.sync_id : null,
+                  }
+            );
+          }
+          break;
+        default:
+          sucsessTasks.push(val._id);
+      }
       /*
       if req.body.type == delete
         delete task(s) by val._id
-
-      create task by val
       */
-      sucsessTasks.push(val._id);
     }
   });
 
