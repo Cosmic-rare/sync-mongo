@@ -19,19 +19,33 @@ const bodySchema = {
 };
 
 const taskSchema = {
-  required: ["type", "title", "_id"],
+  required: [
+    "sync_id",
+    "_id",
+    "_rev",
+    "_deleted",
+    "title",
+    "done",
+    "_createdAt",
+    "_updatedAt",
+    "_hash",
+    "type",
+  ],
   type: "object",
   properties: {
     type: {
       type: "string",
       pattern: "^(create|update|delete)+$",
     },
-    title: {
-      type: "string",
-    },
-    _id: {
-      type: "string",
-    },
+    sync_id: { type: "string" },
+    _id: { type: "string" },
+    _rev: { type: "number" },
+    _deleted: { type: "boolean" },
+    title: { type: "string" },
+    done: { type: "boolean" },
+    _createdAt: { type: "number" },
+    _updatedAt: { type: "number" },
+    _hash: { type: "string" },
   },
 };
 
@@ -53,33 +67,26 @@ router.post("/", async (req, res) => {
     if (!taskValid) {
       errorTasks.push(
         !req.body.error_messages
-          ? val._id
-            ? val._id
+          ? val.sync_id
+            ? val.sync_id
             : null
-          : { id: val._id ? val._id : null, message: taskValidate.errors }
+          : {
+              id: val.sync_id ? val.sync_id : null,
+              message: taskValidate.errors,
+            }
       );
     } else {
+      /*
+      if req.body.type == delete
+        delete task(s) by val._id
+
+      create task by val
+      */
       sucsessTasks.push(val._id);
     }
   });
 
   return res.status(200).json({ sucsess: sucsessTasks, error: errorTasks });
-
-  /*
-  if req.body.type == delete
-    delete task1 by req.body.data._id
-  */
-
-  /*
-  if task1.find by req.body.data._id 
-    if task1._rev < req.body.data._rev
-      update task1 by req.body.data
-      create task2 by task1.findOne by req.body.data.id
-    else 
-       create task2 by req.body.data
-  else 
-   create task1 by req.body.data
-  */
 });
 
 export default router;
