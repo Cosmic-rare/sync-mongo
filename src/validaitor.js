@@ -1,6 +1,8 @@
 import Ajv from "ajv";
 const ajv = new Ajv();
 
+// need CU_TaskValidate, D_TaskValidate
+
 const bodySchema = {
   required: ["datas", "error_messages"],
   type: "object",
@@ -14,7 +16,7 @@ const bodySchema = {
   },
 };
 
-const taskSchema = {
+const CU_taskSchema = {
   required: [
     "sync_id",
     "_id",
@@ -31,7 +33,7 @@ const taskSchema = {
   properties: {
     type: {
       type: "string",
-      pattern: "^(create|update|delete)+$",
+      pattern: "^(create|update)+$",
     },
     sync_id: { type: "string" },
     _id: { type: "string" },
@@ -45,5 +47,19 @@ const taskSchema = {
   },
 };
 
+const taskSchema = {
+  required: ["sync_id", "_id", "type"],
+  type: "object",
+  properties: {
+    type: {
+      type: "string",
+      pattern: "^(create|update|delete)+$",
+    },
+    sync_id: { type: "string" },
+    _id: { type: "string" },
+  },
+};
+
 export const bodyValidate = ajv.compile(bodySchema);
+export const CU_taskValidate = ajv.compile(CU_taskSchema);
 export const taskValidate = ajv.compile(taskSchema);

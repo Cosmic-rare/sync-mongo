@@ -1,6 +1,6 @@
 import express from "express";
 import { Task } from "./schema";
-import { bodyValidate, taskValidate } from "./validaitor";
+import { bodyValidate, CU_taskValidate, taskValidate } from "./validaitor";
 
 const router = express.Router();
 
@@ -14,7 +14,7 @@ router.post("/", async (req, res) => {
     return res.status(400).json({ errors: bodyValidate.errors });
   }
 
-  req.body.datas?.map((val, index) => {
+  req.body.datas?.map(async (val, index) => {
     const taskValid = taskValidate(val);
     if (!taskValid) {
       errorTasks.push(
@@ -30,18 +30,10 @@ router.post("/", async (req, res) => {
     } else {
       switch (val.type) {
         case "create":
-          let createTask = val;
-          createTask._uid = val._id;
-          delete createTask._id, createTask.sync_id, createTask.type;
+        case "update":
+          const CU_taskValid = CU_taskValidate(val);
 
-          try {
-            const newTask = new Task({
-              ...createTask,
-              _v: 10000000000000 * createTask._rev + createTask._updatedAt,
-            });
-            newTask.save();
-            sucsessTasks.push(val.sync_id);
-          } catch (e) {
+          if (!CU_taskValid) {
             errorTasks.push(
               !req.body.error_messages
                 ? val.sync_id
@@ -49,17 +41,39 @@ router.post("/", async (req, res) => {
                   : null
                 : {
                     id: val.sync_id ? val.sync_id : null,
+                    message: CU_taskValid.errors,
                   }
             );
+          } else {
+            let createTask = val;
+            createTask._uid = val._id;
+            delete createTask._id, createTask.sync_id, createTask.type;
+
+            try {
+              const newTask = new Task({
+                ...createTask,
+                _v: 10000000000000 * createTask._rev + createTask._updatedAt,
+              });
+              newTask.save();
+              sucsessTasks.push(val.sync_id);
+            } catch (e) {
+              errorTasks.push(
+                !req.body.error_messages
+                  ? val.sync_id
+                    ? val.sync_id
+                    : null
+                  : {
+                      id: val.sync_id ? val.sync_id : null,
+                    }
+              );
+            }
           }
           break;
-        default:
-          sucsessTasks.push(val._id);
+
+        case "delete":
+          sucsessTasks.push(val.sync_id);
+          await Task.deleteMany({ _uid: val._id });
       }
-      /*
-      if req.body.type == delete
-        delete task(s) by val._id
-      */
     }
   });
 
