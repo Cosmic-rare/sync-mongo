@@ -4,6 +4,26 @@ import { bodyValidate, CU_taskValidate, taskValidate } from "./validaitor";
 
 const router = express.Router();
 
+router.get("/", async (req, res) => {
+  const keys = await Task.aggregate([
+    {
+      $group: {
+        _id: "$_uid",
+        _v: { $max: "$_v" },
+      },
+    },
+  ]);
+
+  keys.map((val, index) => {
+    keys[index]._uid = val._id;
+    delete keys[index]._id;
+  });
+
+  const tasks = await Task.find({ $or: keys });
+
+  return res.status(200).json({ data: tasks });
+});
+
 router.post("/", async (req, res) => {
   const errorTasks = [];
   const sucsessTasks = [];
