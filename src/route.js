@@ -85,7 +85,8 @@ router.post("/", async (req, res) => {
               });
               newTask.save();
               sucsessTasks.push(val.sync_id);
-              console.log(`emit task ${newTask}`);
+
+              req.io.emit("CU_task", newTask, req.body.clientId);
             } catch (e) {
               errorTasks.push(
                 !req.body.error_messages
@@ -102,7 +103,7 @@ router.post("/", async (req, res) => {
 
         case "delete":
           sucsessTasks.push(val.sync_id);
-          console.log(`emit delete id ${val.sync_id}`);
+          req.io.emit("D_task", val._id, req.body.clientId);
           await Task.deleteMany({ _uid: val._id });
       }
     }

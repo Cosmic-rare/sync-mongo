@@ -14,16 +14,17 @@ const io = socket(server, {
 });
 const PORT = 4000;
 
+app.use((req, res, next) => {
+  req.io = io;
+  return next();
+});
+
 app.use(cors());
 app.use(express.json());
 
 mongoose.connect("mongodb://localhost/sync-db");
 
 app.use("/", router);
-
-io.on("connection", (socket) => {
-  console.log("connected", socket.id);
-});
 
 server.listen(PORT, () => {
   console.log(`dev server running at: http://localhost:${PORT}/`);
