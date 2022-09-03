@@ -24,6 +24,15 @@ router.get("/", async (req, res) => {
   return res.status(200).json({ data: tasks });
 });
 
+router.get("/last", async (req, res) => {
+  const lastUpdate = await Task.aggregate([
+    { $sort: { _updatedAt: -1 } },
+    { $limit: 1 },
+  ]);
+
+  return res.status(200).json({ lastUpdate: lastUpdate[0]._updatedAt });
+});
+
 router.post("/", async (req, res) => {
   const errorTasks = [];
   const sucsessTasks = [];
