@@ -4,8 +4,15 @@ import { bodyValidate, CU_taskValidate, taskValidate } from "./validaitor";
 
 const router = express.Router();
 
-router.get("/", async (req, res) => {
+router.get("/get", async (req, res) => {
   const keys = await Task.aggregate([
+    {
+      $match: {
+        _updatedAt: {
+          $gte: req.query.lastUpdate ? parseInt(req.query.lastUpdate, 10) : 0,
+        },
+      },
+    },
     {
       $group: {
         _id: "$_uid",
@@ -13,6 +20,8 @@ router.get("/", async (req, res) => {
       },
     },
   ]);
+
+  console.log(keys);
 
   keys.map((val, index) => {
     keys[index]._uid = val._id;
@@ -22,15 +31,6 @@ router.get("/", async (req, res) => {
   const tasks = await Task.find({ $or: keys });
 
   return res.status(200).json({ data: tasks });
-});
-
-router.get("/last", async (req, res) => {
-  const lastUpdate = await Task.aggregate([
-    { $sort: { _updatedAt: -1 } },
-    { $limit: 1 },
-  ]);
-
-  return res.status(200).json({ lastUpdate: lastUpdate[0]._updatedAt });
 });
 
 router.post("/", async (req, res) => {
