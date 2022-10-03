@@ -4,15 +4,8 @@ import { bodyValidate, CU_taskValidate, taskValidate } from "./validaitor";
 
 const router = express.Router();
 
-router.get("/get", async (req, res) => {
+router.get("/pull", async (req, res) => {
   const keys = await Task.aggregate([
-    {
-      $match: {
-        _updatedAt: {
-          $gte: req.query.lastUpdate ? parseInt(req.query.lastUpdate, 10) : 0,
-        },
-      },
-    },
     {
       $group: {
         _id: "$_uid",
@@ -21,16 +14,14 @@ router.get("/get", async (req, res) => {
     },
   ]);
 
-  console.log(keys);
-
   keys.map((val, index) => {
     keys[index]._uid = val._id;
     delete keys[index]._id;
   });
 
-  const tasks = await Task.find({ $or: keys });
-
-  return res.status(200).json({ data: tasks });
+  return res
+    .status(200)
+    .json({ tasks: await Task.find(keys.length === 0 ? {} : { $or: keys }) });
 });
 
 router.post("/", async (req, res) => {
@@ -86,7 +77,11 @@ router.post("/", async (req, res) => {
               newTask.save();
               sucsessTasks.push(val.sync_id);
 
-              req.io.emit("CU_task", newTask, req.body.clientId);
+              const newestTask = await Task.find({ _uid: createTask._uid })
+                .sort("_v")
+                .limit(1);
+
+              req.io.emit("CU_task", newestTask[0], req.body.clientId);
             } catch (e) {
               errorTasks.push(
                 !req.body.error_messages
@@ -104,10 +99,15 @@ router.post("/", async (req, res) => {
         case "delete":
           sucsessTasks.push(val.sync_id);
           req.io.emit("D_task", val._id, req.body.clientId);
+
           await Task.deleteMany({ _uid: val._id });
       }
     }
   });
+
+  if (req.body.datas.length > 1) {
+    req.io.emit("N_sync");
+  }
 
   return res.status(200).json({ sucsess: sucsessTasks, error: errorTasks });
 });
