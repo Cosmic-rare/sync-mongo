@@ -19,7 +19,7 @@ const bodySchema = {
 const CU_taskSchema = {
   required: [
     "sync_id",
-    "_id",
+    "_uid",
     "_rev",
     "_deleted",
     "title",
@@ -36,7 +36,7 @@ const CU_taskSchema = {
       pattern: "^(create|update)+$",
     },
     sync_id: { type: "string" },
-    _id: { type: "string" },
+    _uid: { type: "string" },
     _rev: { type: "number" },
     _deleted: { type: "boolean" },
     title: { type: "string" },
@@ -48,7 +48,7 @@ const CU_taskSchema = {
 };
 
 const taskSchema = {
-  required: ["sync_id", "_id", "type"],
+  required: ["sync_id", "_uid", "type"],
   type: "object",
   properties: {
     type: {
@@ -56,7 +56,7 @@ const taskSchema = {
       pattern: "^(create|update|delete)+$",
     },
     sync_id: { type: "string" },
-    _id: { type: "string" },
+    _uid: { type: "string" },
   },
 };
 

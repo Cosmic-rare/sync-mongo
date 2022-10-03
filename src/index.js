@@ -4,6 +4,7 @@ import http from "http";
 import cors from "cors";
 import mongoose from "mongoose";
 import router from "./route";
+import bodyParser from "body-parser";
 
 const app = express();
 const server = http.Server(app);
@@ -21,6 +22,8 @@ app.use((req, res, next) => {
 
 app.use(cors());
 app.use(express.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
 
 mongoose.connect("mongodb://localhost/sync-db");
 

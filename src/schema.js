@@ -10,6 +10,7 @@ const TaskType = new mongoose.Schema({
   _rev: Number,
   _deleted: Boolean,
   _v: Number,
+  sync_id: String,
 });
 
 export const Task = mongoose.model("Task", TaskType);

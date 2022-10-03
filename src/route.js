@@ -66,15 +66,14 @@ router.post("/", async (req, res) => {
             );
           } else {
             let createTask = val;
-            createTask._uid = val._id;
-            delete createTask._id, createTask.sync_id, createTask.type;
+            delete createTask.type;
 
             try {
               const newTask = new Task({
                 ...createTask,
                 _v: 10000000000000 * createTask._rev + createTask._updatedAt,
               });
-              newTask.save();
+              await newTask.save();
               sucsessTasks.push(val.sync_id);
 
               const newestTask = await Task.find({ _uid: createTask._uid })
@@ -100,7 +99,7 @@ router.post("/", async (req, res) => {
           sucsessTasks.push(val.sync_id);
           req.io.emit("D_task", val._id, req.body.clientId);
 
-          await Task.deleteMany({ _uid: val._id });
+          await Task.deleteMany({ _uid: val._uid });
       }
     }
   });
