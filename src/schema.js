@@ -1,16 +1,15 @@
 import mongoose from "mongoose";
 
 const TaskType = new mongoose.Schema({
-  _uid: String,
+  task_id: String,
   title: String,
   done: Boolean,
+  _rev: Number,
+  _deleted: Boolean,
   _createdAt: Number,
   _updatedAt: Number,
   _hash: String,
-  _rev: Number,
-  _deleted: Boolean,
   _v: Number,
-  sync_id: String,
 });
 
 export const Task = mongoose.model("Task", TaskType);

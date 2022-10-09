@@ -1,114 +1,61 @@
 import express from "express";
 import { Task } from "./schema";
-import { bodyValidate, CU_taskValidate, taskValidate } from "./validaitor";
+import { bodyValidate } from "./validaitor";
 
 const router = express.Router();
 
-router.get("/pull", async (req, res) => {
+router.get("/", async (req, res) => {
   const keys = await Task.aggregate([
     {
       $group: {
-        _id: "$_uid",
+        _id: "$task_id",
         _v: { $max: "$_v" },
       },
     },
   ]);
 
   keys.map((val, index) => {
-    keys[index]._uid = val._id;
+    keys[index].task_id = val._id;
     delete keys[index]._id;
   });
 
-  return res
-    .status(200)
-    .json({ tasks: await Task.find(keys.length === 0 ? {} : { $or: keys }) });
+  return res.status(200).json({
+    tasks: await Task.find(keys.length === 0 ? {} : { $or: keys }).select(
+      "-_id"
+    ),
+  });
 });
 
 router.post("/", async (req, res) => {
-  const errorTasks = [];
-  const sucsessTasks = [];
-
-  const bodyValid = bodyValidate(req.body);
-
-  if (!bodyValid) {
-    return res.status(400).json({ errors: bodyValidate.errors });
+  if (!bodyValidate(req.body)) {
+    console.log(bodyValidate.errors);
+    return res.status(400).json({ ok: false, errors: bodyValidate.errors });
   }
 
-  req.body.datas?.map(async (val, index) => {
-    const taskValid = taskValidate(val);
-    if (!taskValid) {
-      errorTasks.push(
-        !req.body.error_messages
-          ? val.sync_id
-            ? val.sync_id
-            : null
-          : {
-              id: val.sync_id ? val.sync_id : null,
-              message: taskValidate.errors,
-            }
-      );
-    } else {
-      switch (val.type) {
-        case "create":
-        case "update":
-          const CU_taskValid = CU_taskValidate(val);
+  const bodyData = req.body.task;
 
-          if (!CU_taskValid) {
-            errorTasks.push(
-              !req.body.error_messages
-                ? val.sync_id
-                  ? val.sync_id
-                  : null
-                : {
-                    id: val.sync_id ? val.sync_id : null,
-                    message: CU_taskValid.errors,
-                  }
-            );
-          } else {
-            let createTask = val;
-            delete createTask.type;
+  switch (req.body.type) {
+    case "create":
+    case "update":
+      try {
+        await new Task({
+          ...bodyData,
+          _v: 10000000000000 * bodyData._rev + bodyData._updatedAt,
+        }).save();
 
-            try {
-              const newTask = new Task({
-                ...createTask,
-                _v: 10000000000000 * createTask._rev + createTask._updatedAt,
-              });
-              await newTask.save();
-              sucsessTasks.push(val.sync_id);
-
-              const newestTask = await Task.find({ _uid: createTask._uid })
-                .sort("_v")
-                .limit(1);
-
-              req.io.emit("CU_task", newestTask[0], req.body.clientId);
-            } catch (e) {
-              errorTasks.push(
-                !req.body.error_messages
-                  ? val.sync_id
-                    ? val.sync_id
-                    : null
-                  : {
-                      id: val.sync_id ? val.sync_id : null,
-                    }
-              );
-            }
-          }
-          break;
-
-        case "delete":
-          sucsessTasks.push(val.sync_id);
-          req.io.emit("D_task", val._id, req.body.clientId);
-
-          await Task.deleteMany({ _uid: val._uid });
+        req.io.emit("CU_task", bodyData, req.body.clientId);
+      } catch (err) {
+        return res.status(500).json({ ok: false });
       }
-    }
-  });
 
-  if (req.body.datas.length > 1) {
-    req.io.emit("N_sync");
+      break;
+
+    case "delete":
+      req.io.emit("D_task", bodyData.task_id, req.body.clientId);
+      await Task.deleteMany({ task_id: bodyData.task_id });
   }
 
-  return res.status(200).json({ sucsess: sucsessTasks, error: errorTasks });
+  return res.status(200).json({ ok: true, sync_id: req.body.sync_id });
 });
 
 export default router;
