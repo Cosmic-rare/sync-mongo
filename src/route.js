@@ -28,7 +28,6 @@ router.get("/", async (req, res) => {
 
 router.post("/", async (req, res) => {
   if (!bodyValidate(req.body)) {
-    console.log(bodyValidate.errors);
     return res.status(400).json({ ok: false, errors: bodyValidate.errors });
   }
 
@@ -43,7 +42,7 @@ router.post("/", async (req, res) => {
           _v: 10000000000000 * bodyData._rev + bodyData._updatedAt,
         }).save();
 
-        req.io.emit("CU_task", bodyData, req.body.clientId);
+        req.io.emit("CU_task", bodyData);
       } catch (err) {
         return res.status(500).json({ ok: false });
       }
@@ -51,7 +50,7 @@ router.post("/", async (req, res) => {
       break;
 
     case "delete":
-      req.io.emit("D_task", bodyData.task_id, req.body.clientId);
+      req.io.emit("D_task", bodyData.task_id);
       await Task.deleteMany({ task_id: bodyData.task_id });
   }
 

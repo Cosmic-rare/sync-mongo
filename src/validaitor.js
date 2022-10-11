@@ -2,7 +2,7 @@ import Ajv from "ajv";
 const ajv = new Ajv();
 
 const bodySchema = {
-  required: ["type", "sync_id", "task", "clientId"],
+  required: ["type", "sync_id", "task"],
   type: "object",
   properties: {
     type: {
@@ -33,7 +33,6 @@ const bodySchema = {
         _hash: { type: "string" },
       },
     },
-    clientId: { type: "string" },
   },
 };
 
