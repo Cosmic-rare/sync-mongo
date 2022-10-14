@@ -27,6 +27,8 @@ router.get("/", async (req, res) => {
 });
 
 router.post("/", async (req, res) => {
+  // 同じデータに関する処理を追加
+
   if (!bodyValidate(req.body)) {
     return res.status(400).json({ ok: false, errors: bodyValidate.errors });
   }
@@ -56,5 +58,7 @@ router.post("/", async (req, res) => {
 
   return res.status(200).json({ ok: true, sync_id: req.body.sync_id });
 });
+
+// task_idで取得する(復元とかのやつ)
 
 export default router;
