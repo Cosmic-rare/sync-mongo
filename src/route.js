@@ -39,11 +39,15 @@ router.post("/", async (req, res) => {
     case "create":
     case "update":
       try {
+        // 最新のデータを取得
+        // どっちが新しいか
+
         await new Task({
           ...bodyData,
           _v: 10000000000000 * bodyData._rev + bodyData._updatedAt,
         }).save();
 
+        // 送られてきたものが新しかった場合emitする
         req.io.emit("CU_task", bodyData);
       } catch (err) {
         return res.status(500).json({ ok: false });
